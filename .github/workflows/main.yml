@@ -1,0 +1,38 @@
+name: Automated Commit
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Git
+      run: |
+        git config --global user.email "xon3iros@gmail.com"
+        git config --global user.name "xONEIROS"
+
+    - name: Select Random Sticker
+      id: random_sticker
+      run: |
+        LINES=$(wc -l < stickers.txt)
+        RAND=$(( ( RANDOM % LINES ) + 1 ))
+        STICKER=$(sed -n "${RAND}p" stickers.txt)
+        echo "STICKER=$STICKER" >> $GITHUB_ENV
+
+    - name: Pull latest changes
+      run: |
+        git pull origin main --rebase
+
+    - name: Make a commit
+      run: |
+        echo "Commit made at $(date) with sticker: ${{ env.STICKER }}" >> commit-log.txt
+        git add commit-log.txt
+        git commit -m "For You: ${{ env.STICKER }}"
+        git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
